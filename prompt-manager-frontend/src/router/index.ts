@@ -21,6 +21,8 @@ const router = createRouter({
       path: '/',
       component: () => import('../layouts/AppLayout.vue'),
       children: [
+        { path: 'public-prompts', name: 'PublicPrompts', component: () => import('../views/PublicPromptsView.vue') },
+        { path: 'sandbox', name: 'Sandbox', component: () => import('../views/SandboxView.vue') },
         {
           path: 'dashboard',
           name: 'Dashboard',

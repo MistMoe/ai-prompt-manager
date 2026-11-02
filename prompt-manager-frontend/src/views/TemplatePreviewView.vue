@@ -109,6 +109,7 @@
 </template>
 
 <script setup lang="ts">
+import { templateVariables, previewTemplate } from '../utils/templates.mjs'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -122,39 +123,10 @@ const promptList = ref<PromptItem[]>([])
 const selectedId = ref<number | null>(null)
 const currentPrompt = ref<PromptItem | null>(null)
 
-const variableValues = reactive<Record<string, string>>({})
+const variableValues = reactive<Record<string, string>>(Object.create(null))
 
-const variables = computed(() => {
-  if (!currentPrompt.value?.content) return []
-
-  const reg = /\{\{\s*([^{}]+?)\s*\}\}/g
-  const result = new Set<string>()
-  let match: RegExpExecArray | null
-
-  while ((match = reg.exec(currentPrompt.value.content)) !== null) {
-    result.add(match[1].trim())
-  }
-
-  return Array.from(result)
-})
-
-const finalPrompt = computed(() => {
-  if (!currentPrompt.value?.content) return ''
-
-  let content = currentPrompt.value.content
-
-  variables.value.forEach((variable) => {
-    const value = variableValues[variable] || `{{${variable}}}`
-    const reg = new RegExp(`\\{\\{\\s*${escapeRegExp(variable)}\\s*\\}\\}`, 'g')
-    content = content.replace(reg, value)
-  })
-
-  return content
-})
-
-const escapeRegExp = (str: string) => {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-}
+const variables = computed(() => templateVariables(currentPrompt.value?.content || ''))
+const finalPrompt = computed(() => previewTemplate(currentPrompt.value?.content || '', variableValues))
 
 const fetchPromptList = async () => {
   loading.value = true

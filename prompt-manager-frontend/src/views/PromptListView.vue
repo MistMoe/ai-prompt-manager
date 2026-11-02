@@ -82,6 +82,7 @@
     </div>
 
     <div class="card-actions">
+      <el-button size="small" plain @click="togglePublished(item)">{{ item.isPublic === 1 ? '取消公开' : '公开模板' }}</el-button>
       <el-button size="small" plain @click="handleCopy(item)">复制</el-button>
       <el-button size="small" plain @click="openEdit(item)">编辑</el-button>
       <el-button size="small" plain type="danger" @click="handleDelete(item)">删除</el-button>
@@ -159,6 +160,8 @@
 </template>
 
 <script setup lang="ts">
+import { publishPrompt } from '../api/workspace'
+import { decodeTemplate } from '../utils/templates.mjs'
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -244,41 +247,18 @@ const triggerImport = () => {
   fileInputRef.value?.click()
 }
 
-const readTextFile = (file: File) => {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
+async function readTextFile(file: File) {
+  if (file.size > 100000) throw new Error('文件最多 100 KB')
+  return decodeTemplate(await file.arrayBuffer())
+}
 
-    reader.onload = () => {
-      try {
-        const buffer = reader.result as ArrayBuffer
-
-        // 先按 UTF-8 解码
-        const utf8Text = new TextDecoder('utf-8').decode(buffer)
-
-        // 如果出现 �，说明大概率是 GBK / ANSI 文件被当成 UTF-8 读了
-        if (utf8Text.includes('�')) {
-          try {
-            const gbkText = new TextDecoder('gb18030').decode(buffer)
-            resolve(gbkText)
-            return
-          } catch {
-            resolve(utf8Text)
-            return
-          }
-        }
-
-        resolve(utf8Text)
-      } catch (error) {
-        reject(new Error('文件解码失败'))
-      }
-    }
-
-    reader.onerror = () => {
-      reject(new Error('文件读取失败'))
-    }
-
-    reader.readAsArrayBuffer(file)
-  })
+async function togglePublished(item: PromptItem) {
+  try {
+    if (item.isPublic !== 1) await ElMessageBox.confirm('公开后，其他登录用户可查看并复制此模板。确认内容适合分享？', '公开模板')
+    await publishPrompt(item.id, item.isPublic !== 1)
+    item.isPublic = item.isPublic === 1 ? 0 : 1
+    ElMessage.success(item.isPublic === 1 ? '模板已公开' : '已取消公开')
+  } catch { /* Cancellation and request errors are handled by their respective UI. */ }
 }
 
 const handleFileChange = async (event: Event) => {

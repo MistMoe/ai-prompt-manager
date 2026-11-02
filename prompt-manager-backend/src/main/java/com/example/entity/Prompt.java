@@ -30,6 +30,8 @@ public class Prompt {
     private Integer isFavorite;
 
     private Integer useCount;
+    private Integer isPublic;
+    private Long shareVersion;
 
     private LocalDateTime createTime;
 

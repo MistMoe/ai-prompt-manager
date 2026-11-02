@@ -1,6 +1,7 @@
 package com.example.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -10,6 +11,8 @@ import com.example.dto.PromptUpdateDTO;
 import com.example.entity.Prompt;
 import com.example.mapper.PromptMapper;
 import com.example.service.PromptService;
+import com.example.service.PublicPromptService;
+import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,6 +20,7 @@ import java.time.LocalDateTime;
 
 @Service
 public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> implements PromptService {
+    @Resource private PublicPromptService publicPrompts;
 
     @Override
     public void createPrompt(PromptCreateDTO createDTO) {
@@ -31,6 +35,8 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
         prompt.setTags(createDTO.getTags());
         prompt.setIsFavorite(0);
         prompt.setUseCount(0);
+        prompt.setIsPublic(0);
+        prompt.setShareVersion(0L);
         prompt.setCreateTime(LocalDateTime.now());
         prompt.setUpdateTime(LocalDateTime.now());
         prompt.setDeleteStatus(0);
@@ -86,6 +92,8 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
 
     @Override
     public void updatePrompt(Long id, PromptUpdateDTO updateDTO) {
+        if (updateDTO.getIsFavorite() != null && updateDTO.getIsFavorite() != 0 && updateDTO.getIsFavorite() != 1)
+            throw new IllegalArgumentException("收藏状态参数错误");
         Prompt prompt = getOwnPrompt(id);
 
         prompt.setTitle(updateDTO.getTitle());
@@ -100,13 +108,20 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
 
         prompt.setUpdateTime(LocalDateTime.now());
 
-        this.updateById(prompt);
+        boolean changed = this.update(new UpdateWrapper<Prompt>().eq("id", id).eq("user_id", UserContext.getUserId())
+                .set("title", prompt.getTitle()).set("content", prompt.getContent()).set("category", prompt.getCategory())
+                .set("model_type", prompt.getModelType()).set("tags", prompt.getTags())
+                .set(updateDTO.getIsFavorite() != null, "is_favorite", updateDTO.getIsFavorite())
+                .set("update_time", prompt.getUpdateTime()).setSql("share_version = share_version + 1"));
+        if (!changed) throw new RuntimeException("模板状态已变化，请刷新");
+        publicPrompts.evict(id, prompt.getShareVersion());
     }
 
     @Override
     public void deletePrompt(Long id) {
-        getOwnPrompt(id);
+        Prompt prompt = getOwnPrompt(id);
         this.removeById(id);
+        publicPrompts.evict(id, prompt.getShareVersion());
     }
 
     @Override
@@ -115,21 +130,16 @@ public class PromptServiceImpl extends ServiceImpl<PromptMapper, Prompt> impleme
             throw new RuntimeException("收藏状态参数错误");
         }
 
-        Prompt prompt = getOwnPrompt(id);
-        prompt.setIsFavorite(isFavorite);
-        prompt.setUpdateTime(LocalDateTime.now());
-
-        this.updateById(prompt);
+        getOwnPrompt(id);
+        this.update(new UpdateWrapper<Prompt>().eq("id", id).eq("user_id", UserContext.getUserId())
+                .set("is_favorite", isFavorite).set("update_time", LocalDateTime.now()));
     }
 
     @Override
     public void increaseUseCount(Long id) {
-        Prompt prompt = getOwnPrompt(id);
-        Integer useCount = prompt.getUseCount() == null ? 0 : prompt.getUseCount();
-        prompt.setUseCount(useCount + 1);
-        prompt.setUpdateTime(LocalDateTime.now());
-
-        this.updateById(prompt);
+        getOwnPrompt(id);
+        this.update(new UpdateWrapper<Prompt>().eq("id", id).eq("user_id", UserContext.getUserId())
+                .setSql("use_count = COALESCE(use_count, 0) + 1").set("update_time", LocalDateTime.now()));
     }
 
     private Prompt getOwnPrompt(Long id) {

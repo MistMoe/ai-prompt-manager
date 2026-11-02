@@ -8,17 +8,19 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@org.springframework.stereotype.Component
 public class JwtUtil {
 
-    private static final String SECRET = "prompt-manager-secret-key-2026-javaee-project";
+    private final SecretKey key;
+    public JwtUtil(@org.springframework.beans.factory.annotation.Value("${security.jwt-secret:}") String secret) {
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32)
+            throw new IllegalArgumentException("请通过 JWT_SECRET 配置至少 32 字节的随机 JWT 签名密钥");
+        key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     private static final long EXPIRE_TIME = 1000L * 60 * 60 * 24;
 
-    private static SecretKey getSecretKey() {
-        return Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public static String createToken(Long userId, String userName) {
+    public String createToken(Long userId, String userName) {
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + EXPIRE_TIME);
 
@@ -27,13 +29,13 @@ public class JwtUtil {
                 .claim("userName", userName)
                 .issuedAt(now)
                 .expiration(expireDate)
-                .signWith(getSecretKey())
+                .signWith(key)
                 .compact();
     }
 
-    public static Claims parseToken(String token) {
+    public Claims parseToken(String token) {
         return Jwts.parser()
-                .verifyWith(getSecretKey())
+                .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();

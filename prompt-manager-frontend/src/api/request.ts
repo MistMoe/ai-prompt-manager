@@ -41,7 +41,11 @@ request.interceptors.response.use(
     return Promise.reject(res)
   },
   (error) => {
-    ElMessage.error(error.message || '网络请求异常')
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token'); localStorage.removeItem('userInfo')
+      window.location.href = '/login'
+    }
+    ElMessage.error(error.response?.data?.message || error.message || '网络请求异常')
     return Promise.reject(error)
   }
 )
