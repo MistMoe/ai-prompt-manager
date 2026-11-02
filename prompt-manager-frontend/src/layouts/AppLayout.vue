@@ -10,6 +10,8 @@
       </div>
 
       <nav class="sidebar-nav">
+        <RouterLink to="/public-prompts" class="nav-item" active-class="nav-active"><span>公共模板</span></RouterLink>
+        <RouterLink to="/sandbox" class="nav-item" active-class="nav-active"><span>模型调试</span></RouterLink>
         <RouterLink to="/dashboard" class="nav-item" active-class="nav-active">
           <span>总览</span>
         </RouterLink>
@@ -78,6 +80,8 @@ const userInitial = computed(() => {
 
 const pageTitle = computed(() => {
   const titleMap: Record<string, string> = {
+    '/public-prompts': '公共模板',
+    '/sandbox': '模型调试',
     '/dashboard': '总览',
     '/prompts': 'Prompt 资产库',
     '/favorites': '收藏夹',

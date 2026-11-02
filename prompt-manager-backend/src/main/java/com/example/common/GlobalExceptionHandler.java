@@ -7,6 +7,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(IllegalArgumentException.class)
+    public org.springframework.http.ResponseEntity<Result<Void>> handleArgument(IllegalArgumentException e) {
+        Result<Void> result = Result.error(e.getMessage()); result.setCode(400);
+        return org.springframework.http.ResponseEntity.badRequest().body(result);
+    }
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public org.springframework.http.ResponseEntity<Result<Void>> handleStatus(org.springframework.web.server.ResponseStatusException e) {
+        Result<Void> result = Result.error(e.getReason());
+        result.setCode(e.getStatusCode().value());
+        return org.springframework.http.ResponseEntity.status(e.getStatusCode()).body(result);
+    }
 
     @ExceptionHandler(RuntimeException.class)
     public Result<Void> handleRuntimeException(RuntimeException e) {

@@ -10,11 +10,13 @@ import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
+    @jakarta.annotation.Resource private JwtUtil jwtUtil;
 
     @Override
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) throws Exception {
+        UserContext.clear();
 
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
@@ -34,7 +36,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         }
 
         try {
-            Claims claims = JwtUtil.parseToken(token);
+            Claims claims = jwtUtil.parseToken(token);
             Long userId = Long.valueOf(claims.getSubject());
             UserContext.setUserId(userId);
             return true;

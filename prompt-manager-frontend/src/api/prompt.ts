@@ -10,6 +10,7 @@ export interface PromptItem {
   tags: string
   isFavorite: number
   useCount: number
+  isPublic: number
   createTime: string
   updateTime: string
   deleteStatus: number

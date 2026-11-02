@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 
 @Service
 public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> implements SysUserService {
+    @jakarta.annotation.Resource private JwtUtil jwtUtil;
 
     @Override
     public void register(UserRegisterDTO registerDTO) {
@@ -52,7 +53,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw new RuntimeException("密码错误");
         }
 
-        String token = JwtUtil.createToken(user.getId(), user.getUserName());
+        String token = jwtUtil.createToken(user.getId(), user.getUserName());
 
         LoginVO loginVO = new LoginVO();
         loginVO.setToken(token);
