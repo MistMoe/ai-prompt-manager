@@ -123,7 +123,7 @@ const promptList = ref<PromptItem[]>([])
 const selectedId = ref<number | null>(null)
 const currentPrompt = ref<PromptItem | null>(null)
 
-const variableValues = reactive<Record<string, string>>({})
+const variableValues = reactive<Record<string, string>>(Object.create(null))
 
 const variables = computed(() => templateVariables(currentPrompt.value?.content || ''))
 const finalPrompt = computed(() => previewTemplate(currentPrompt.value?.content || '', variableValues))

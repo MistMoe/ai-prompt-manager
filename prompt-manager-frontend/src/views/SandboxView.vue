@@ -42,7 +42,7 @@ import { getPromptPageApi, type PromptItem } from '../api/prompt'
 import { sandboxModels, runSandbox, type ModelOption, type RunResult } from '../api/workspace'
 import { templateVariables, previewTemplate } from '../utils/templates.mjs'
 const prompts = ref<PromptItem[]>([]), models = ref<ModelOption[]>([]), selectedModels = ref<string[]>([])
-const selectedId = ref<number | null>(null), values = reactive<Record<string,string>>({})
+const selectedId = ref<number | null>(null), values = reactive<Record<string,string>>(Object.create(null))
 const results = ref<RunResult[]>([]), running = ref(false)
 const current = computed(() => prompts.value.find(prompt => prompt.id === selectedId.value))
 const variables = computed(() => templateVariables(current.value?.content || ''))

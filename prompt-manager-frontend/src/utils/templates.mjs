@@ -2,7 +2,8 @@ export function templateVariables(template) {
   return [...new Set([...template.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)].map(match => match[1].trim()))]
 }
 export function previewTemplate(template, values) {
-  return template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (placeholder, name) => values[name.trim()] ?? placeholder)
+  return template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (placeholder, name) =>
+    Object.hasOwn(values, name.trim()) ? values[name.trim()] ?? placeholder : placeholder)
 }
 export function decodeTemplate(buffer) {
   const bytes = new Uint8Array(buffer)
